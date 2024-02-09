@@ -22,59 +22,60 @@ def HardSigmoid_grad(x):
     return 0.2 if -2.5 <= x <= 2.5 else 0
 
 
-def leaky_relu(x, alpha=0.3):
+def LeakyReLu(x, alpha=0.3):
     return x if x > 0 else alpha * x
 
 
-def leaky_relu_grad(x, alpha=0.3):
+def LeakyReLu_grad(x, alpha=0.3):
     return 1 if x > 0 else alpha
 
 
-def relu(x):
+def ReLu(x):
     return x if x > 0 else 0
 
 
-def relu_grad(x):
+def ReLu_grad(x):
     return 1 if x > 0 else 0
 
 
-def selu(x, alpha=1.67326324, scale=1.05070098):
+def SELU(x, alpha=1.67326324, scale=1.05070098):
     return scale * x if x > 0 else scale * alpha * (np.exp(x) - 1)
 
 
-def selu_grad(x, alpha=1.67326324, scale=1.05070098):
+def SELU_grad(x, alpha=1.67326324, scale=1.05070098):
     return scale if x > 0 else scale * alpha * x
 
 
-def gelu(x):
+def GELU(x):
     return 0.5 * x * (1 + np.tanh(np.sqrt(2 / np.pi) * (x + 0.044715 * x ** 3)))
 
 
-def gelu_grad(x):
+def GELU_grad(x):
     s = x / np.sqrt(2)
     erf_prime = lambda x: (2 / np.sqrt(np.pi)) * np.exp(-(x ** 2))
     approx = np.tanh(np.sqrt(2 / np.pi) * (x + 0.0044715 * x ** 3))
     return 0.5 + 0.5 * approx + ((0.5 * x * erf_prime(s)) / np.sqrt(2))
 
 
-def sigmoid(x):
+def Sigmoid(x):
     return 1 / (1 + np.exp(-x))
 
 
-def sigmoid_grad(x):
-    return sigmoid(x) * (1 - sigmoid(x)) * (1 - 2 * sigmoid(x))
+def Sigmoid_grad(x):
+    return Sigmoid(x) * (1 - Sigmoid(x)) * (1 - 2 * Sigmoid(x))
 
- def soft_plus(x):
+
+def SoftPlus(x):
     return np.log(1 + np.exp(x))
 
 
-def soft_plus_grad(x):
+def SoftPlus_grad(x):
     return np.exp(x) / (1 + np.exp(x))
 
 
-def tanh(x):
+def Tanh(x):
     return np.tanh(x)
 
 
-def tanh_grad(x):
+def Tanh_grad(x):
     return 1 - np.tanh(x) ** 2

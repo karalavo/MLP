@@ -1,5 +1,8 @@
+import sys
+
 import numpy as np
 import pandas as pd
+import Activations
 
 # test = '../datasets/emnist-letters/emnist-letters-test.csv'
 # train = '../datasets/emnist-letters/emnist-letters-train.csv'
@@ -17,27 +20,28 @@ import pandas as pd
 #по рофлу: оптимизаторы, l1/l2/dropout,
 #KingScheduler
 class MLP:
-    activator = {
-        'ELU': 'elu',
-        ''
-    }
 
     def __init__(self, test, train, count_layers, count_neurons, learn_rate, decay, epochs, activator):
         self.dataset_processing(pd.read_csv(test), pd.read_csv(train))
-        self.initialisation_of_weight(count_layers, count_neurons)
+        self.initialisation_of_w(count_layers, count_neurons)
         self.initialisation_of_b(count_layers, count_neurons)
+        self.import_activator(activator)
         self.learn_rate = learn_rate
         self.decay = decay
         self.epochs = epochs
-        self.activator = activator
 
     def dataset_processing(self, train, test):
-        train_ = np.array(train)
-        test_ = np.array(test)
-        self.Y_train = train_[0]
+        train_ = np.array(train).T
+        test_ = np.array(test).T
+        y_train = np.zeros((train_[0].size,  train_[0].max()))
+        y_train[np.arange(train_[0].size),  train_[0]] = 1
+        y_test = np.zeros((test_[0].size, test_[0].max()))
+        y_test[np.arange(test_[0].size), test_[0]] = 1
+        self.Y_train = y_train.T
         self.X_train = train_[1:] / 255
-        self.Y_test = test_[0]
+        self.Y_test = y_test.T
         self.X_test = test_[1:] / 255
+
 
     def initialisation_of_w(self, count_layers, count_neurons):
         count_neurons += [26, 784]
@@ -55,9 +59,54 @@ class MLP:
                 self.b_h_o = np.zeros((26, 1))
 
     def import_activator(self, activator):
+        self.act_fn = getattr(sys.modules['Activations'], activator)
+        self.act_fn_grad = getattr(sys.modules['Activations'], activator + '_grad')
+
+    @staticmethod
+    def __softmax(z):
+        return np.exp(z) / sum(np.exp(z))
+
+    def __feedforward_function(self, count_layers, img):
+        h = [img]
+        h_pre = []
+        for layer in count_layers + 1:
+            w = getattr(self, 'w_i_h{}'.format(layer + 1))
+            b = getattr(self, 'b_i_h{}'.format(layer + 1))
+            if layer + 1 != count_layers + 1:
+                h_pre.append(b + w @ h[-1])
+                h.append(self.act_fn(h_pre[-1]))
+            else:
+                h_o = self.b_h_o + self.w_h_o @ h[-1]
+                h.append(self.__softmax(h_o))
+        return h, h_pre
+
+    def __backpropagation(self, count_layers, h, h_pre):
+        for layer in count_layers + 1:
+            h = h.pop()
+            if layer == 0:
+                do = h - self.Y_train
+                getattr(self, 'w_i_h{}'.format(count_layers - layer)) += -self.learn_rate * do @ h.pop().T
+                getattr(self, 'b_i_h{}'.format(count_layers - layer)) += -self.learn_rate * do
 
 
-    def __feedforward_function(self, img):
+
+
+
+        do = o - self.__train_label
+        self.__w_h_o += -_LEARN_RATE * do @ h2.T
+        self.__b_h_o += -_LEARN_RATE * do
+        dh2 = self.__w_h_o.T @ do
+        dh_pre_2 = dh2 * self.__leaky_relu_derivative(h_pre_2)
+        self.__w_i_h_2 += -_LEARN_RATE * dh_pre_2 @ h1.T
+        self.__b_i_h_2 += -_LEARN_RATE * dh_pre_2
+        dh1 = self.__w_i_h_2.T @ dh_pre_2
+        dh_pre_1 = dh1 * self.__leaky_relu_derivative(h_pre_1)
+        self.__w_i_h_1 += -_LEARN_RATE * dh_pre_1 @ img.T
+        self.__b_i_h_1 += -_LEARN_RATE * dh_pre_1
+
+
+
+
 
 
 
