@@ -3,6 +3,7 @@ import sys
 import numpy as np
 import pandas as pd
 import Activations
+import DropOut
 
 # test = '../datasets/emnist-letters/emnist-letters-test.csv'
 # train = '../datasets/emnist-letters/emnist-letters-train.csv'
@@ -21,11 +22,12 @@ import Activations
 #KingScheduler
 class MLP:
 
-    def __init__(self, test, train, count_layers, count_neurons, learn_rate, decay, epochs, activator):
+    def __init__(self, test, train, count_layers, count_neurons, learn_rate, decay, epochs, activator, dropout, dropout_rate):
         self.dataset_processing(pd.read_csv(test), pd.read_csv(train))
         self.w = self.__initialisation_of_w(count_layers, count_neurons)
         self.b = self.__initialisation_of_b(count_layers, count_neurons)
         self.act_fn, self.act_fn_grad = self.__import_activator(activator)
+        self.dropout = self.__import_dropout(dropout)
 
         self.learn_rate = learn_rate
         self.decay = decay
@@ -42,6 +44,10 @@ class MLP:
         self.X_train = train_[1:] / 255
         self.Y_test = y_test.T
         self.X_test = test_[1:] / 255
+
+    @staticmethod
+    def __import_dropout(dropout):
+        return getattr(sys.modules['DropOut'], dropout)
 
 
     @staticmethod
@@ -69,19 +75,22 @@ class MLP:
     def __softmax(z):
         return np.exp(z) / sum(np.exp(z))
 
-    def __feedforward_function(self, count_layers, img):
+    def __feedforward(self, count_layers, img, dropout_rate):
         h = [img]
         h_pre = []
-        for layer in count_layers + 1:
+        for layer in range(count_layers + 1):
             h_pre.append(self.b[layer] + self.w[layer @ h[-1]])
             h.append(self.act_fn(h_pre[-1]))
+            if layer < count_layers:
+                h[-1] = self.dropout(h[-1], dropout_rate)
         h[-1] = self.__softmax(h_pre.pop())
         return h, h_pre
 
     def __backpropagation(self, count_layers, h, h_pre):
         dh = 0
         dh_pre = 0
-        for layer in count_layers + 1:
+
+        for layer in range(count_layers + 1):
             if layer == 0:
                 dh = h.pop() - self.Y_train
                 self.w[count_layers - layer] += -self.learn_rate * dh @ h.pop()
